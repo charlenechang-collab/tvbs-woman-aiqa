@@ -14,9 +14,78 @@ export default function App() {
   const [qaResults, setQaResults] = useState<QAPair[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Track which specific row is regenerating
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
+
+  // Auto-load database.csv
+  useEffect(() => {
+    const loadDefaultDatabase = async () => {
+      try {
+        const response = await fetch('/database.csv');
+        if (!response.ok) return;
+
+        const csvText = await response.text();
+        if (!csvText || csvText.trim().length === 0) return;
+
+        if ((window as any).Papa) {
+          (window as any).Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results: any) => {
+              const rawData = results.data;
+              if (rawData && rawData.length > 0) {
+                // --- START: Rigid Parsing Logic (Synced with DatabaseUploader) ---
+                const firstRow = rawData[0];
+                const keys = Object.keys(firstRow);
+                const normalizeKey = (key: string) => key ? key.trim().replace(/^[\uFEFF]/, '').toLowerCase() : '';
+
+                const findKey = (candidates: string[]) => {
+                  const exact = keys.find(k => candidates.includes(normalizeKey(k)));
+                  if (exact) return exact;
+                  const partial = keys.find(k => candidates.some(c => normalizeKey(k).includes(c)));
+                  if (partial) return partial;
+                  return null;
+                };
+
+                const idKey = findKey(['id', 'article_id', 'post_id', '編號']) || keys.find(k => k.toLowerCase().includes('id')) || 'id';
+                const titleKey = findKey(['title', 'post_title', 'headline', 'subject', 'topic', 'name', '標題', 'article_title']) || 'title';
+
+                // Add '內容' to detection list
+                let contentKey = findKey(['content', 'body', 'text', '內文', '內容', 'description', 'article_content', 'post_content']);
+
+                if (!contentKey && keys.length > 0) {
+                  // Fallback: use last column or non-id/title column
+                  contentKey = keys.find(k => k !== idKey && k !== titleKey) || keys[keys.length - 1];
+                }
+
+                console.log(`[Auto-Load] Mapped columns - ID: ${idKey}, Title: ${titleKey}, Content: ${contentKey}`);
+
+                const normalizedData = rawData.map((row: any) => ({
+                  id: String(row[idKey] || 'unknown').trim(),
+                  title: String(row[titleKey] || 'No Title').trim(),
+                  content: contentKey ? String(row[contentKey] || '').trim() : '',
+                  ...row
+                }));
+                // --- END: Rigid Parsing Logic ---
+
+                setDbData(normalizedData);
+                setDbName('Auto-Loaded Database');
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Auto-load failed", e);
+      }
+    };
+
+    if ((window as any).Papa) {
+      loadDefaultDatabase();
+    } else {
+      setTimeout(loadDefaultDatabase, 1000);
+    }
+  }, []);
 
   // Helper to process raw AI result and map ID to Title
   const processRawResult = (item: QAPair, database: Article[]): QAPair => {
@@ -27,7 +96,7 @@ export default function App() {
 
     // Clean up ID: remove brackets [], "ID:" prefix, and whitespace
     const cleanId = item.sourceId.replace(/\[|\]/g, '').replace(/^(ID:|id:)\s*/i, '').trim();
-    
+
     // Find exact match in the loaded database
     const originalArticle = database.find(article => article.id === cleanId);
 
@@ -38,7 +107,7 @@ export default function App() {
         sourceTitle: originalArticle.title // Use the EXACT title from CSV
       };
     }
-    
+
     return item;
   };
 
@@ -59,7 +128,7 @@ export default function App() {
     try {
       // 1. Client-side RAG Retrieval
       const contextArticles = findRelevantArticles(inputText, dbData, 5);
-      
+
       if (contextArticles.length === 0) {
         throw new Error("無法從資料庫中找到相關文章，請檢查 CSV 內容是否正確。");
       }
@@ -90,7 +159,7 @@ export default function App() {
     try {
       // 1. Re-fetch context (fast client-side op)
       const contextArticles = findRelevantArticles(inputText, dbData, 5);
-      
+
       // 2. Call Gemini for single item
       const newPair = await generateSingleQA({
         inputArticle: inputText,
@@ -117,7 +186,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 pb-20">
-      
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-pink-100 shadow-sm">
         <div className="max-w-[95%] xl:max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -139,7 +208,7 @@ export default function App() {
 
       {/* Main Container: Fluid width to accommodate large table */}
       <main className="w-full mx-auto px-4 py-8">
-        
+
         {/* Input Section Container */}
         <div className="max-w-5xl mx-auto">
           {/* Intro */}
@@ -150,6 +219,7 @@ export default function App() {
             </p>
           </div>
 
+
           {/* Step 1: Upload */}
           <div className="bg-white rounded-2xl shadow-sm border border-pink-100 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
@@ -158,56 +228,57 @@ export default function App() {
                 資料庫設定
               </h3>
               {dbName && (
-                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                   已載入: {dbName} ({dbData.length} 筆資料)
-                 </span>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                  已載入: {dbName} ({dbData.length} 筆資料)
+                </span>
               )}
             </div>
-            
+
             <DatabaseUploader onDataLoaded={(data, name) => {
               setDbData(data);
               setDbName(name);
             }} />
 
+            {/* Auto-load Message or Error */}
             {!dbName && (
-               <div className="flex items-start gap-2 text-xs text-orange-500 bg-orange-50 p-3 rounded-lg">
-                 <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-                 <p>請記得上傳文章資料庫檔案，以啟用 RAG 關聯搜尋功能。</p>
-               </div>
+              <div className="flex items-start gap-2 text-xs text-orange-500 bg-orange-50 p-3 rounded-lg">
+                <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                <p>若未自動載入，請手動上傳文章資料庫 (CSV)。</p>
+              </div>
             )}
           </div>
 
           {/* Step 2: Input */}
           <div className="bg-white rounded-2xl shadow-sm border border-pink-100 p-6 mb-8 relative">
-             <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-700 flex items-center gap-2">
                 <span className="bg-gray-100 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
                 文章內容
               </h3>
             </div>
             <ArticleInput value={inputText} onChange={setInputText} disabled={loading} />
-            
+
             <div className="flex justify-end mt-4">
-               <button
+              <button
                 onClick={handleGenerate}
                 disabled={loading || !inputText || !dbData.length}
                 className={`
                   px-8 py-3 rounded-full font-bold text-white shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95
                   ${(loading || !inputText || !dbData.length) ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:shadow-pink-200'}
                 `}
-               >
-                 {loading ? (
-                   <>
-                     <Loader2 className="animate-spin" size={20} />
-                     此由 AI 奴才肝出，唯一要求：請編輯大大去喝水 💧
-                   </>
-                 ) : (
-                   <>
-                     <Sparkles size={20} />
-                     產生延伸問答
-                   </>
-                 )}
-               </button>
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    此由 AI 奴才肝出，唯一要求：請編輯大大去喝水 💧
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    產生延伸問答
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -222,8 +293,8 @@ export default function App() {
 
         {/* Output Section */}
         <div className="max-w-[98%] 2xl:max-w-7xl mx-auto">
-          <QAOutput 
-            data={qaResults} 
+          <QAOutput
+            data={qaResults}
             onRegenerate={handleRegenerateSingle}
             regeneratingIndex={regeneratingIndex}
           />
