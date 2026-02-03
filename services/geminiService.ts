@@ -54,23 +54,60 @@ const getDailyTrends = async (): Promise<string> => {
 };
 
 /**
- * Simulates the "Web Search Skill" extracting top keywords.
- * Ideally, this should call an external API that performs a fresh search.
- * Currently hardcoded with '2026/02' trends fetched by the Agent.
+ * Fetches real-time trends using Gemini with Google Search Grounding.
+ * This replaces the simulated "Agent Skill" with actual AI Web Search.
  */
 const fetchNewTrends = async (): Promise<string[]> => {
-  // Simulated delay
-  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log('🌍 Conducting Live Web Search for Trends...');
 
-  // Result from "Search: 2026 台灣 美妝 時尚 流行 關鍵字"
-  // This list simulates the "Web Search Skill" output.
-  return [
-    '原生感底妝 (Native Skin)',
-    '蜜糖水光唇 (Honey Glazed Lips)',
-    '柔化哥德風 (Soft Goth)',
-    '修容腮紅 (Contouring Blush)',
-    '外泌體保養 (Exosomes)'
-  ];
+  const searchPrompt = `
+    請搜尋目前 2026 年 2 月台灣最流行的「美妝」與「時尚」關鍵字。
+    請歸納出最熱門的 前 5 個 關鍵字 (例如：特色妝容、熱門成分、流行色系)。
+    
+    回傳格式要求：
+    1. 只回傳關鍵字，用「、」分隔。
+    2. 不要 markdown，不要前言後語。
+    3. 每個關鍵字可以附帶英文 (例如：原生感底妝 (Native Skin))。
+  `;
+
+  try {
+    // Call Gemini with Google Search Tool enabled
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-flash', // Use Flash for speed & cost
+      contents: searchPrompt,
+      config: {
+        tools: [{ googleSearch: {} }], // 🚀 Enable Live Search
+        responseMimeType: "text/plain",
+      }
+    });
+
+    const text = response.text;
+    if (!text) throw new Error("Empty response from Trend Search");
+
+    console.log('🔍 Raw Trend Search Result:', text);
+
+    // Parse result (split by "、" or "," or newline)
+    const keywords = text.split(/[,、\n]/)
+      .map(k => k.trim())
+      .filter(k => k.length > 0)
+      .slice(0, 5); // Take top 5
+
+    if (keywords.length === 0) throw new Error("Failed to parse keywords");
+
+    return keywords;
+
+  } catch (error) {
+    console.error("⚠️ Trend Search Failed, using fallback list.", error);
+
+    // Fallback list if Search fails (Backup Safety)
+    return [
+      '原生感底妝 (Native Skin)',
+      '蜜糖水光唇 (Honey Glazed Lips)',
+      '柔化哥德風 (Soft Goth)',
+      '修容腮紅 (Contouring Blush)',
+      '外泌體保養 (Exosomes)'
+    ];
+  }
 };
 
 // 🚀 Optimized Model Strategy: Forced Economy Mode
