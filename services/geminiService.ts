@@ -1,18 +1,81 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GenerateRequest, QAPair } from '../types';
+import SYSTEM_INSTRUCTION_TEMPLATE from '../prompts/v2_base_prompt.txt?raw';
 
 // Initialize the API client
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-import SYSTEM_INSTRUCTION from '../prompts/v1.1_trend_optimization.txt?raw';
+// 🚀 Local Cache Key for Daily Trends
+const CACHE_KEY = 'daily_trends';
 
-// 🚀 Optimized Model Strategy for Pro Users
-// 🚀 Optimized Model Strategy for Cost Efficiency
+interface DailyTrends {
+  date: string;
+  keywords: string[];
+}
+
+/**
+ * Get daily trends from localStorage or fetch new ones if cache is expired.
+ * Implements client-side caching to reduce token usage and API calls.
+ */
+const getDailyTrends = async (): Promise<string> => {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const cachedData = localStorage.getItem(CACHE_KEY);
+
+  if (cachedData) {
+    try {
+      const parsedCache: DailyTrends = JSON.parse(cachedData);
+      // Check if cache is from today
+      if (parsedCache.date === today && parsedCache.keywords && parsedCache.keywords.length > 0) {
+        console.log('✅ Cache Hit: Using stored daily trends.');
+        return parsedCache.keywords.join('、');
+      }
+    } catch (e) {
+      console.warn('Error parsing cached trends, fetching new ones.');
+    }
+  }
+
+  console.log('⚠️ Cache Miss: Fetching new daily trends...');
+
+  // In a real environment, this logic would trigger a "Web Search Skill" or call a backend API.
+  // Since we are running client-side, we simulate the "Agent Search" result here.
+  const keywords = await fetchNewTrends();
+
+  // Summarize to top 5 keywords to save tokens
+  const top5Keywords = keywords.slice(0, 5);
+
+  // Save to cache
+  const newCache: DailyTrends = {
+    date: today,
+    keywords: top5Keywords,
+  };
+  localStorage.setItem(CACHE_KEY, JSON.stringify(newCache));
+
+  return top5Keywords.join('、');
+};
+
+/**
+ * Simulates the "Web Search Skill" extracting top keywords.
+ * Ideally, this should call an external API that performs a fresh search.
+ * Currently hardcoded with '2026/02' trends fetched by the Agent.
+ */
+const fetchNewTrends = async (): Promise<string[]> => {
+  // Simulated delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Result from "Search: 2026 台灣 美妝 時尚 流行 關鍵字"
+  // This list simulates the "Web Search Skill" output.
+  return [
+    '原生感底妝 (Native Skin)',
+    '蜜糖水光唇 (Honey Glazed Lips)',
+    '柔化哥德風 (Soft Goth)',
+    '修容腮紅 (Contouring Blush)',
+    '外泌體保養 (Exosomes)'
+  ];
+};
+
+// 🚀 Optimized Model Strategy: Forced Economy Mode
 const MODELS_TO_TRY = [
-  'gemini-1.5-flash',       // ⚡ Fastest & Cheapest (Priority for Cost Saving)
-  'gemini-1.5-pro',         // 🥇 High Quality Fallback
-  'gemini-2.0-flash',       // 🚀 Next Gen
-  'gemini-1.0-pro',         // Legacy Fallback
+  'gemini-1.5-flash',       // ⚡ Fastest & Cheapest (Forced as per v2.1 spec)
 ];
 
 // Helper to retry API calls with Model Fallback
@@ -22,18 +85,18 @@ const generateWithFallback = async (
   let lastError: any = null;
 
   for (const model of MODELS_TO_TRY) {
-    console.log(`[Google AI Pro] Attempting generation with model: ${model}...`);
+    console.log(`[Google AI] Attempting generation with model: ${model}...`);
     try {
-      // 1. Try the model with robust retries for Pro tier
+      // 1. Try the model with robust retries
       const result = await callGeminiWithRetry(async () => {
         return await generateFn(model);
-      }, 2, 1000); // 2 retries per model to ensure stability
+      }, 2, 1000); // 2 retries per model
 
       console.log(`✅ SUCCESS: Model ${model} generated content.`);
       return result;
 
     } catch (error: any) {
-      console.warn(`⚠️ Model ${model} failed, switching to next... Error:`, error.message || error);
+      console.warn(`⚠️ Model ${model} failed... Error:`, error.message || error);
       lastError = error;
 
       // If 403/Forbidden (API Key issue) -> Stop immediately
@@ -52,7 +115,7 @@ const callGeminiWithRetry = async <T>(operation: () => Promise<T>, retries = 3, 
   } catch (error: any) {
     const isOverloaded =
       error.status === 503 ||
-      error.status === 429 || // Also retry on Rate Limit (Pro should have higher limits but still possible)
+      error.status === 429 || // Also retry on Rate Limit
       (error.message && error.message.includes('Overloaded')) ||
       (error.message && error.message.includes('busy'));
 
@@ -67,6 +130,12 @@ const callGeminiWithRetry = async <T>(operation: () => Promise<T>, retries = 3, 
 
 export const generateExtendedQA = async (request: GenerateRequest): Promise<QAPair[]> => {
   const { inputArticle, ragContext } = request;
+
+  // 1. Get Daily Trends (Cached or Fetched)
+  const todayTrends = await getDailyTrends();
+
+  // 2. Inject Trends into System Prompt (Dynamic Injection)
+  const systemInstruction = SYSTEM_INSTRUCTION_TEMPLATE.replace('{{today_trends}}', todayTrends);
 
   // Prepare context string
   const contextString = ragContext.map((ctx, index) =>
@@ -97,7 +166,7 @@ ${contextString}
         model: model,
         contents: prompt,
         config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
+          systemInstruction: systemInstruction, // Dynamic Prompt with injected trends
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.ARRAY,
@@ -135,6 +204,12 @@ ${contextString}
 export const generateSingleQA = async (request: GenerateRequest): Promise<QAPair> => {
   const { inputArticle, ragContext } = request;
 
+  // 1. Get Daily Trends (Cached or Fetched)
+  const todayTrends = await getDailyTrends();
+
+  // 2. Inject Trends into System Prompt
+  const systemInstruction = SYSTEM_INSTRUCTION_TEMPLATE.replace('{{today_trends}}', todayTrends);
+
   const contextString = ragContext.map((ctx, index) =>
     `[文章 ${index + 1}] ID: ${ctx.id}\n標題: ${ctx.title}\n內容摘要: ${ctx.content}\n`
   ).join('\n----------------\n');
@@ -156,7 +231,7 @@ ${contextString}
         model: model,
         contents: prompt,
         config: {
-          systemInstruction: SYSTEM_INSTRUCTION, // Reuse the same persona
+          systemInstruction: systemInstruction, // Reuse the same persona
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT, // Requesting a single Object, not Array
