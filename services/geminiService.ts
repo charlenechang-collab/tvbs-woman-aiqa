@@ -60,8 +60,14 @@ const getDailyTrends = async (): Promise<string> => {
 const fetchNewTrends = async (): Promise<string[]> => {
   console.log('🌍 Conducting Live Web Search for Trends...');
 
+  // Calculate current year and month dynamically (e.g., "2026年2月")
+  const date = new Date();
+  const currentYear = date.getFullYear();
+  const currentMonth = date.getMonth() + 1; // getMonth is 0-indexed
+  const dateString = `${currentYear}年${currentMonth}月`;
+
   const searchPrompt = `
-    請搜尋目前 2026 年 2 月台灣最流行的「美妝」與「時尚」關鍵字。
+    請搜尋目前 ${dateString} 台灣最流行的「美妝」與「時尚」關鍵字。
     請歸納出最熱門的 前 5 個 關鍵字 (例如：特色妝容、熱門成分、流行色系)。
     
     回傳格式要求：
