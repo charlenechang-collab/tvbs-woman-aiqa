@@ -47,10 +47,11 @@ const SYSTEM_INSTRUCTION = `
 `;
 
 // 🚀 Optimized Model Strategy for Pro Users
+// 🚀 Optimized Model Strategy for Cost Efficiency
 const MODELS_TO_TRY = [
-  'gemini-1.5-pro',         // 🥇 Best Quality & Reasoning (Priority for Pro)
-  'gemini-1.5-flash',       // ⚡ High Speed Fallback
-  'gemini-2.0-flash',       // 🚀 Next Gen (Good balance)
+  'gemini-1.5-flash',       // ⚡ Fastest & Cheapest (Priority for Cost Saving)
+  'gemini-1.5-pro',         // 🥇 High Quality Fallback
+  'gemini-2.0-flash',       // 🚀 Next Gen
   'gemini-1.0-pro',         // Legacy Fallback
 ];
 

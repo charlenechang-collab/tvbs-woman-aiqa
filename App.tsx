@@ -14,6 +14,7 @@ export default function App() {
   const [qaResults, setQaResults] = useState<QAPair[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [articleCache, setArticleCache] = useState<Record<string, QAPair[]>>({}); // Cache for generated results
 
   // Track which specific row is regenerating
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
@@ -112,7 +113,8 @@ export default function App() {
   };
 
   const handleGenerate = async () => {
-    if (!inputText.trim()) {
+    const cleanInput = inputText.trim();
+    if (!cleanInput) {
       alert("請先輸入文章內容");
       return;
     }
@@ -121,13 +123,22 @@ export default function App() {
       return;
     }
 
+    // Check Cache
+    if (articleCache[cleanInput]) {
+      const useCache = confirm("這篇文章已經生成過問答囉！是否直接顯示快取結果？\n(按「取消」將強制重新呼叫 API 生成)");
+      if (useCache) {
+        setQaResults(articleCache[cleanInput]);
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     setQaResults([]);
 
     try {
       // 1. Client-side RAG Retrieval
-      const contextArticles = findRelevantArticles(inputText, dbData, 5);
+      const contextArticles = findRelevantArticles(cleanInput, dbData, 5);
 
       if (contextArticles.length === 0) {
         throw new Error("無法從資料庫中找到相關文章，請檢查 CSV 內容是否正確。");
@@ -135,7 +146,7 @@ export default function App() {
 
       // 2. Call Gemini
       const results = await generateExtendedQA({
-        inputArticle: inputText,
+        inputArticle: cleanInput,
         ragContext: contextArticles
       });
 
@@ -143,6 +154,12 @@ export default function App() {
       const enhancedResults = results.map(item => processRawResult(item, dbData));
 
       setQaResults(enhancedResults);
+
+      // Save to Cache
+      setArticleCache(prev => ({
+        ...prev,
+        [cleanInput]: enhancedResults
+      }));
 
     } catch (err: any) {
       console.error(err);
