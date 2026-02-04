@@ -3,3 +3,8 @@ node_modules/
 dist/
 database.csv
 .DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+*.local

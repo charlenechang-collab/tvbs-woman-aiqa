@@ -90,29 +90,35 @@ export default function App() {
 
   // Helper to process raw AI result and map ID to Title
   const processRawResult = (item: QAPair, database: Article[]): QAPair => {
-    // Skip "本文延伸"
-    if (item.sourceId === '本文延伸' || item.sourceId.includes('本文')) {
-      return item;
+    // 1. Sanitize Content: Remove bold syntax from list items to enforce style
+    // Regex targets: "1. **Text**" or "- **Text**" patterns
+    const cleanAnswer = item.answer.replace(/^(\s*[\d\.\-\*]+\s*)\*\*(.*?)\*\*/gm, '$1$2');
+
+    const processedItem = { ...item, answer: cleanAnswer };
+
+    // Skip "本文延伸" logic...
+    if (processedItem.sourceId === '本文延伸' || processedItem.sourceId.includes('本文')) {
+      return processedItem;
     }
 
     // Clean up ID: remove brackets [], "ID:" prefix, and whitespace
-    const cleanId = item.sourceId.replace(/\[|\]/g, '').replace(/^(ID:|id:)\s*/i, '').trim();
+    const cleanId = processedItem.sourceId.replace(/\[|\]/g, '').replace(/^(ID:|id:)\s*/i, '').trim();
 
     // Find exact match in the loaded database
     const originalArticle = database.find(article => article.id === cleanId);
 
     if (originalArticle) {
       return {
-        ...item,
+        ...processedItem,
         sourceId: cleanId, // Standardize ID format
         sourceTitle: originalArticle.title // Use the EXACT title from CSV
       };
     }
 
-    return item;
+    return processedItem;
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (skipCache = false) => {
     const cleanInput = inputText.trim();
     if (!cleanInput) {
       alert("請先輸入文章內容");
@@ -123,13 +129,11 @@ export default function App() {
       return;
     }
 
-    // Check Cache
-    if (articleCache[cleanInput]) {
-      const useCache = confirm("這篇文章已經生成過問答囉！是否直接顯示快取結果？\n(按「取消」將強制重新呼叫 API 生成)");
-      if (useCache) {
-        setQaResults(articleCache[cleanInput]);
-        return;
-      }
+    // Check Cache (Only if not skipping)
+    if (!skipCache && articleCache[cleanInput]) {
+      setQaResults(articleCache[cleanInput]);
+      console.log("✨ Loaded from cache");
+      return;
     }
 
     setLoading(true);
@@ -309,7 +313,25 @@ export default function App() {
         </div>
 
         {/* Output Section */}
-        <div className="max-w-[98%] 2xl:max-w-7xl mx-auto">
+        <div className="max-w-[98%] 2xl:max-w-7xl mx-auto relative">
+
+          {/* Regenerate All Button (Only visible when has results) */}
+          {qaResults.length > 0 && !loading && (
+            <div className="flex justify-end mb-4 px-2">
+              <button
+                onClick={() => {
+                  if (confirm("確定要拋棄當前結果，強制重新生成嗎？")) {
+                    handleGenerate(true);
+                  }
+                }}
+                className="flex items-center gap-2 text-sm text-gray-500 hover:text-pink-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100 hover:border-pink-200"
+              >
+                <Sparkles size={16} />
+                不滿意？強制重新生成全部 (Force Regenerate)
+              </button>
+            </div>
+          )}
+
           <QAOutput
             data={qaResults}
             onRegenerate={handleRegenerateSingle}
