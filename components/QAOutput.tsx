@@ -220,7 +220,7 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
       <button
         onClick={() => handleCopyQ(idx)}
         className={`mt-2 w-full py-2 px-3 rounded-lg shadow-sm transition-all text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`q-${idx}`]
-          ? 'bg-green-500 text-white transform scale-100'
+          ? 'bg-teal-500 text-white transform scale-100'
           : 'bg-gray-100 text-gray-600 hover:bg-pink-500 hover:text-white hover:shadow-lg'
           }`}
       >
@@ -262,8 +262,8 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
       <button
         onClick={() => handleCopyA(idx)}
         className={`mt-3 w-full py-3 px-4 rounded-xl shadow-sm transition-all text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`a-${idx}`]
-          ? 'bg-green-500 text-white'
-          : 'bg-slate-800 text-white hover:bg-pink-600 hover:shadow-lg'
+          ? 'bg-teal-500 text-white'
+          : 'bg-purple-900 text-white hover:bg-pink-600 hover:shadow-lg'
           }`}
       >
         {copiedStates[`a-${idx}`] ? <Check size={18} /> : <Copy size={18} />}
@@ -283,7 +283,7 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <div className="font-black text-slate-800 bg-slate-100 px-3 py-1 rounded-md text-xs self-start border border-slate-200">
+          <div className="font-black text-purple-900 bg-purple-50 px-3 py-1 rounded-md text-xs self-start border border-purple-100">
             [ID: {item.sourceId.replace(/^ID:\s*/i, '')}]
           </div>
           <div className="font-bold text-gray-800 leading-snug">
@@ -329,7 +329,7 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
         {editableData.length > 0 && (
           <button
             onClick={handleExportJSON}
-            className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-pink-600 hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 bg-purple-900 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-pink-600 hover:shadow-lg transition-all transform hover:-translate-y-0.5"
           >
             <Download size={18} />
             一鍵匯出 JSON

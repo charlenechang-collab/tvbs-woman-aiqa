@@ -16,6 +16,16 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [articleCache, setArticleCache] = useState<Record<string, QAPair[]>>({}); // Cache for generated results
 
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   // Track which specific row is regenerating
   const [regeneratingIndex, setRegeneratingIndex] = useState<number | null>(null);
 
@@ -132,7 +142,7 @@ export default function App() {
     // Check Cache (Only if not skipping)
     if (!skipCache && articleCache[cleanInput]) {
       setQaResults(articleCache[cleanInput]);
-      console.log("✨ Loaded from cache");
+      setToast({ message: "✨ 已顯示快取紀錄 (未扣款)", type: 'success' });
       return;
     }
 
@@ -249,7 +259,7 @@ export default function App() {
                 資料庫設定
               </h3>
               {dbName && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-full font-medium">
                   已載入: {dbName} ({dbData.length} 筆資料)
                 </span>
               )}
@@ -262,7 +272,7 @@ export default function App() {
 
             {/* Auto-load Message or Error */}
             {!dbName && (
-              <div className="flex items-start gap-2 text-xs text-orange-500 bg-orange-50 p-3 rounded-lg">
+              <div className="flex items-start gap-2 text-xs text-rose-400 bg-rose-50 p-3 rounded-lg">
                 <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
                 <p>若未自動載入，請手動上傳文章資料庫 (CSV)。</p>
               </div>
@@ -281,7 +291,7 @@ export default function App() {
 
             <div className="flex justify-end mt-4">
               <button
-                onClick={handleGenerate}
+                onClick={() => handleGenerate(false)}
                 disabled={loading || !inputText || !dbData.length}
                 className={`
                   px-8 py-3 rounded-full font-bold text-white shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95
@@ -303,9 +313,20 @@ export default function App() {
             </div>
           </div>
 
+          {/* Toast Notification */}
+          {toast && (
+            <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-up">
+              <div className={`px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 text-white font-medium ${toast.type === 'success' ? 'bg-gradient-to-r from-teal-500 to-emerald-500' : 'bg-gray-800'
+                }`}>
+                {toast.type === 'success' ? <Sparkles size={18} /> : <AlertCircle size={18} />}
+                {toast.message}
+              </div>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-8 rounded-r shadow-sm flex items-center gap-3">
+            <div className="bg-rose-50 border-l-4 border-rose-500 text-rose-700 p-4 mb-8 rounded-r shadow-sm flex items-center gap-3">
               <AlertCircle size={24} />
               <p>{error}</p>
             </div>

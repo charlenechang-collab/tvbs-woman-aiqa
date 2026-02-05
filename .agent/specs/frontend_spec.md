@@ -13,8 +13,13 @@
     - `index.css`
     - Tailwind classes in any components.
     - Layout structure.
-    - Color palette.
+    - Layout structure.
     - Animations (Loader2, Sparkles).
+    - **Color Palette (Strict Harmonization)**:
+        - **Primary**: Pink/Rose Gradients.
+        - **Success**: Teal (`teal-500`, `teal-50`) - *No generic green*.
+        - **Action/Neutral**: Deep Purple (`purple-900`) - *No generic slate*.
+        - **Warning/Error**: Rose (`rose-400`, `rose-600`) - *No generic orange/red*.
 
 ## State Flow
 1. **Init**: Load `database.csv` automatically if present.
