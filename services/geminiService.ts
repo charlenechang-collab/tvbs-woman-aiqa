@@ -160,10 +160,21 @@ ${contextString}
   - ✅ 正確：皮衣保養的正確步驟是什麼？
 - 字數限制放寬至 **18 字** 以內，確保語意完整。
 
+**JSON 輸出範例 (請嚴格模仿此結構，只輸出 6 項)**：
+[
+  { "question": "Q1...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
+  { "question": "Q2...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
+  { "question": "Q3...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
+  { "question": "Q4...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
+  { "question": "Q5...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
+  { "question": "Q6...", "answer": "...", "sourceId": "...", "sourceTitle": "..." }
+]
+**⚠️ 重要警告：Generating more than 6 items will be penalized. STOP immediately after the 6th item.**
+
 請以 JSON 陣列格式輸出。
 `;
 
-  return JSON.parse(await generateWithFallback((model) => ({
+  const finalOutput = JSON.parse(await generateWithFallback((model) => ({
     system_instruction: { parts: [{ text: systemInstructionText }] },
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
@@ -183,6 +194,9 @@ ${contextString}
       }
     }
   }))) as QAPair[];
+
+  // 🛡️ HARD CONSTRAINT removed per user request (Relying on Prompt Template for token saving)
+  return finalOutput;
 };
 
 

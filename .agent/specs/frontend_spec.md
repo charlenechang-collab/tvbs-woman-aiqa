@@ -27,9 +27,11 @@
 3. **Action**: User clicks "Generate".
 4. **Process**:
     - Find relevant articles (Client-side RAG).
-    - Call Gemini API (via `geminiService.ts`).
+    - Find relevant articles (Client-side RAG).
+    - Call Gemini API (via `geminiService.ts`) or **Load from LocalStorage Cache**.
     - Post-process response (Clean markdown, map IDs).
 5. **Result**: Display Q&A cards with "Regenerate" options.
+6. **Feedback**: Show **Toast Notification** (Teal) instead of blocking alerts for cache hits.
 
 ## QA Output Formatting Rules (CRITICAL)
 - **Header Rendering**:

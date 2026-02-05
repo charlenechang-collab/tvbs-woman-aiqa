@@ -25,6 +25,7 @@ The system attempts models in this specific order to balance cost and performanc
         - **Structure**: Strictly enforced **3-Paragraph / 3-H2** structure.
         - **Prohibitions**: No H3/H4 headers. No "Pseudo-headers" (bold text at start of list items).
         - **Trend Injection**: DISABLED (Do not fetch or hallucinate 2026 trends).
+        - **Output Count**: STRICTLY **6 Items** (3-4 RAG, 2-3 Extended). using Prompt Template logic.
 
 ### Error Handling
 - **404/Model Not Found**: Automatically try next model in list.

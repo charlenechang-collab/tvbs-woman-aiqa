@@ -14,9 +14,22 @@ export default function App() {
   const [qaResults, setQaResults] = useState<QAPair[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [articleCache, setArticleCache] = useState<Record<string, QAPair[]>>({}); // Cache for generated results
+  // Cache with LocalStorage Persistence
+  const [articleCache, setArticleCache] = useState<Record<string, QAPair[]>>(() => {
+    try {
+      const saved = localStorage.getItem('tvbs_qa_cache');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+
+  // Persist cache changes
+  useEffect(() => {
+    localStorage.setItem('tvbs_qa_cache', JSON.stringify(articleCache));
+  }, [articleCache]);
 
   // Auto-dismiss toast
   useEffect(() => {
@@ -142,7 +155,7 @@ export default function App() {
     // Check Cache (Only if not skipping)
     if (!skipCache && articleCache[cleanInput]) {
       setQaResults(articleCache[cleanInput]);
-      setToast({ message: "✨ 已顯示快取紀錄 (未扣款)", type: 'success' });
+      setToast({ message: "✨ 已完成", type: 'success' });
       return;
     }
 
@@ -348,7 +361,7 @@ export default function App() {
                 className="flex items-center gap-2 text-sm text-gray-500 hover:text-pink-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100 hover:border-pink-200"
               >
                 <Sparkles size={16} />
-                不滿意？強制重新生成全部 (Force Regenerate)
+                重新生成全部
               </button>
             </div>
           )}
