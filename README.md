@@ -1,20 +1,72 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# TVBS Woman AI-QA Generator
 
-# Run and deploy your AI Studio app
+A React-based AI content generation tool designed for **TVBS 《女人我最大》**. This application leverages **Google Gemini API** and **RAG (Retrieval-Augmented Generation)** to produce high-quality, SEO-optimized Q&A content based on historical article data.
 
-This contains everything you need to run your app locally.
+## 🚀 Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1-S9nzL6HXytVCu2QZctHYLI870F18mon
+- **RAG Architecture**: Client-side retrieval using vector-like context matching from `database.csv`.
+- **Intelligent Model Strategy**:
+  - Automatically prioritizes **Gemini 1.5 Flash** for speed and cost-efficiency.
+  - Implements robust **Fallback Logic** to `Gemini 1.5 Pro` / `2.0 Flash` ensuring high availability.
+- **Smart Caching**: Request caching to prevent redundant API consumption for identical inputs.
+- **Structured Output**: Generates strict JSON formats suitable for CMS integration.
+- **Responsive UI**: Modern, clean interface built with React 19 and Tailwind-inspired CSS principles.
 
-## Run Locally
+## 🛠 Tech Stack
 
-**Prerequisites:**  Node.js
+- **Core**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **AI Integration**: Google Generative AI (Gemini 1.5 / 2.0)
+- **Styling**: Vanilla CSS (Scoped & Modular)
+- **Testing**: Playwright
 
+## 📦 Installation & Setup
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Prerequisites
+- Node.js (v18+ recommended)
+- A valid Google Gemini API Key
+
+### 1. Clone the repository
+```bash
+git clone <repository-url>
+cd tvbs-woman-aiqa
+```
+
+### 2. Install dependencies
+```bash
+npm install
+```
+
+### 3. Environment Configuration
+Create a `.env` file in the root directory:
+```env
+# Required for AI generation
+API_KEY=your_google_gemini_api_key
+```
+
+### 4. Run Locally
+```bash
+npm run dev
+```
+The application will start at `http://127.0.0.1:5173`.
+
+## 📂 Project Structure
+
+```
+├── App.tsx                 # Main application controller & state management
+├── services/
+│   └── geminiService.ts    # AI Model interaction, Fallback logic & Prompt engineering
+├── components/             # Reusable UI components
+├── prompts/                # System prompts and templates
+├── database.csv            # Source data for RAG (Add your corpus here)
+└── public/                 # Static assets
+```
+
+## 🧪 Scripts
+
+- `npm run dev`: Start development server.
+- `npm run build`: Build for production.
+- `npm run test`: Run E2E tests with Playwright.
+
+## 📝 License
+Proprietary - TVBS internal use only.
