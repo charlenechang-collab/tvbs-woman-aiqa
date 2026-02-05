@@ -17,7 +17,7 @@ A React-based AI content generation tool designed for **TVBS 《女人我最大�
 
 - **Core**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
 - **Build Tool**: [Vite](https://vitejs.dev/)
-- **AI Integration**: Google Generative AI (Gemini 1.5 / 2.0)
+- **AI Integration**: Google Generative AI (Gemini 3.0 / 2.5 / 1.5)
 - **Styling**: Vanilla CSS (Scoped & Modular)
 - **Testing**: Playwright
 
