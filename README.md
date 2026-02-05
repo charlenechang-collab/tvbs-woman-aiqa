@@ -6,8 +6,8 @@ A React-based AI content generation tool designed for **TVBS 《女人我最大�
 
 - **RAG Architecture**: Client-side retrieval using vector-like context matching from `database.csv`.
 - **Intelligent Model Strategy**:
-  - Automatically prioritizes **Gemini 1.5 Flash** for speed and cost-efficiency.
-  - Implements robust **Fallback Logic** to `Gemini 1.5 Pro` / `2.0 Flash` ensuring high availability.
+  - Automatically prioritizes **Gemini 3.0 / 2.5 Flash** for speed and cost-efficiency.
+  - Implements robust **Fallback Logic** to `Gemini 1.5 Pro` (or newer Pro versions) ensuring high availability.
 - **Smart Caching**: Request caching to prevent redundant API consumption for identical inputs.
 - **Structured Output**: Generates strict JSON formats suitable for CMS integration.
 - **Responsive UI**: Modern, clean interface built with React 19 and Tailwind-inspired CSS principles.
