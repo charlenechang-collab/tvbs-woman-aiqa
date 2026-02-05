@@ -1,5 +1,6 @@
+import 'dotenv/config'; // Make sure to install dotenv if running this script manually
 
-const apiKey = 'AIzaSyBSId_FS5caxr8YMcXjXudITLNjgFcrh6Q';
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
 console.log(`🔑 Testing API Key: ${apiKey.substring(0, 10)}...`);
 
 async function verifyKey() {
