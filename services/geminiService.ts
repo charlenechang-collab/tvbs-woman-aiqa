@@ -17,11 +17,9 @@ interface DailyTrends {
 const GEMINI_BASE_URL_STUDIO = "https://generativelanguage.googleapis.com/v1beta/models";
 
 // 硬編碼 API Key 以確保測試無誤
-const HARDCODED_KEY = 'AIzaSyAdJ7BC4L9kQv2OIC4fSEWYgWFTvsxuqY8';
-
 async function callGeminiRaw(modelId: string, payload: any): Promise<any> {
-  const apiKey = process.env.API_KEY || HARDCODED_KEY;
-  if (!apiKey) throw new Error("API Key is missing!");
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key is missing! Please checking .env file.");
 
   // 清理模型名稱，確保格式正確
   // 例如 "models/gemini-1.5-flash" -> "gemini-1.5-flash"
