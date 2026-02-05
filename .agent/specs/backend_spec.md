@@ -21,6 +21,10 @@ The system attempts models in this specific order to balance cost and performanc
 - **Prompt Structure**:
     - System Role: Defined in `prompts/v2_base_prompt.txt`.
     - User Prompt: Combines Target Article + RAG Context + Strict output JSON schema instructions.
+    - **Formatting Constraints**:
+        - **Structure**: Strictly enforced **3-Paragraph / 3-H2** structure.
+        - **Prohibitions**: No H3/H4 headers. No "Pseudo-headers" (bold text at start of list items).
+        - **Trend Injection**: DISABLED (Do not fetch or hallucinate 2026 trends).
 
 ### Error Handling
 - **404/Model Not Found**: Automatically try next model in list.

@@ -19,8 +19,8 @@ import { Copy, Check, Eye, Edit3, Sparkles, ChevronDown, ChevronUp, RotateCcw, L
  */
 
 // 🛡️ PROTECTED REGEX PATTERNS
-// H2 Header: Matches line solely containing **text** (ignoring whitespace)
-const HEADER_REGEX = /^\s*\*\*(.+?)\*\*\s*$/;
+// H2 Header: Matches line starting with ## or wrapped in ** (robust)
+const HEADER_REGEX = /^\s*(?:##\s*(?:\*\*)?|(?:\*\*))(.+?)(?:\*\*)?\s*$/;
 // Inline Bold: Matches **text** inside a paragraph
 const INLINE_BOLD_REGEX = /\*\*(.+?)\*\*/g;
 
@@ -102,8 +102,8 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
     // ==================================================================================
     // 1. Pre-process: Ensure headers are surrounded by newlines
     let processedText = rawText
-      // Ensure double newlines before headers to isolate them
-      .replace(/(\*\*.*?\*\*\s*$)/gm, '\n$1\n')
+      // Ensure double newlines before headers (## or **) to isolate them
+      .replace(/((?:^|\n)\s*(?:##|\*\*).*?$)/gm, '\n$1\n')
       // Normalize multiple newlines
       .replace(/\n{3,}/g, '\n\n');
 
@@ -112,10 +112,11 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
     const htmlParts = lines.map(line => {
       const trimmed = line.trim();
 
-      // 1. Detect Header: Matches **Header Text** that is the ONLY content on the line
-      // Relaxed regex: allows leading/trailing whitespace
-      const headerMatch = trimmed.match(/^\s*\*\*(.+?)\*\*\s*$/);
+      // 1. Detect Header: Matches ## Title or **Title**
+      // Use the shared HEADER_REGEX to ensure consistency with preview
+      const headerMatch = trimmed.match(HEADER_REGEX);
       if (headerMatch) {
+        // Group 1 contains the clean title text
         return `<h2>${headerMatch[1].trim()}</h2>`;
       }
 

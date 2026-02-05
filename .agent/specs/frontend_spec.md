@@ -25,3 +25,14 @@
     - Call Gemini API (via `geminiService.ts`).
     - Post-process response (Clean markdown, map IDs).
 5. **Result**: Display Q&A cards with "Regenerate" options.
+
+## QA Output Formatting Rules (CRITICAL)
+- **Header Rendering**:
+    - **Visual Style**: H2 headers must be rendered with a **Pink Left Border** style (`border-l-4 border-pink-400`).
+    - **Detection Logic**: The system must support **Robust Regex** detection for headers to handle AI variability.
+        - Must match: `**Title**` (Bold only)
+        - Must match: `## Title` (Markdown H2)
+        - Must match: `## **Title**` (Mixed)
+        - **Regex**: `/^\s*(?:##\s*(?:\*\*)?|(?:\*\*))(.+?)(?:\*\*)?\s*$/`
+- **Content Sanitization**:
+    - **Bold Cleanup**: To prevent "Pseudo-Headers" (H3), the system post-processes list items to remove bold formatting from the start of the line (e.g., `1. **Title**` -> `1. Title`).
