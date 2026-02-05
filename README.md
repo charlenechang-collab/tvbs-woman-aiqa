@@ -10,6 +10,7 @@ A React-based AI content generation tool designed for **TVBS 《女人我最大�
   - Implements robust **Fallback Logic** to `Gemini 1.5 Pro` (or newer Pro versions) ensuring high availability.
 - **Smart Caching**: Request caching to prevent redundant API consumption for identical inputs.
 - **Structured Output**: Generates strict JSON formats suitable for CMS integration.
+- **Strict Prompt Engineering**: Enforces specific editorial rules (e.g., 18-char titles, 3-4 RAG sources vs 2-3 extended sources) to maintain content quality.
 - **Responsive UI**: Modern, clean interface built with React 19 and Tailwind-inspired CSS principles.
 
 ## 🛠 Tech Stack
