@@ -88,7 +88,7 @@ export const DatabaseUploader: React.FC<DatabaseUploaderProps> = ({ onDataLoaded
             contentKey = keys.find(k => k !== idKey && k !== titleKey) || keys[keys.length - 1];
           }
 
-          console.log(`Mapped columns - ID: ${idKey}, Title: ${titleKey}, Content: ${contentKey}`);
+
 
           const normalizedData: Article[] = rawData.map((row: any) => ({
             id: String(row[idKey] || 'unknown').trim(),

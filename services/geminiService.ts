@@ -80,7 +80,7 @@ const generateWithFallback = async (
   let lastError: any = null;
 
   for (const model of MODELS) {
-    console.log(`[Google AI] 嘗試模型: ${model}...`);
+
     try {
       const payload = createPayload(model);
 
@@ -94,19 +94,19 @@ const generateWithFallback = async (
         throw new Error(`內容被安全設定阻擋: ${JSON.stringify(data.promptFeedback)}`);
       }
       if (!text) {
-        console.warn(`Model ${model} 回傳空內容，嘗試下一個...`);
+
         continue;
       }
 
-      console.log(`✅ 成功: 模型 ${model} 已生成內容。`);
+
       return text;
 
     } catch (error: any) {
       // 如果錯誤包含 MODEL_NOT_FOUND (404)，這很正常，我們只需要換下一個模型
       if (error.message.includes('MODEL_NOT_FOUND') || error.message.includes('404')) {
-        console.warn(`⚠️ 模型 ${model} 不可用 (404)，切換至下一個...`);
+
       } else {
-        console.warn(`⚠️ 模型 ${model} 發生其他錯誤:`, error.message);
+
       }
       lastError = error;
 

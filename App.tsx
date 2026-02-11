@@ -83,7 +83,7 @@ export default function App() {
                   contentKey = keys.find(k => k !== idKey && k !== titleKey) || keys[keys.length - 1];
                 }
 
-                console.log(`[Auto-Load] Mapped columns - ID: ${idKey}, Title: ${titleKey}, Content: ${contentKey}`);
+
 
                 const normalizedData = rawData.map((row: any) => ({
                   id: String(row[idKey] || 'unknown').trim(),
