@@ -9,3 +9,8 @@ npm-debug.log*
 .idea/
 *.local
 .antigravity/
+
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
