@@ -19,8 +19,7 @@ test.describe('Woman AIQA App', () => {
         // Check if step 1 exists
         await expect(page.getByText('資料庫設定')).toBeVisible();
         // Check if dropzone or upload button exists (assuming DatabaseUploader renders something)
-        // We might need to inspect DatabaseUploader code to be precise, but text search is good 1st step
-        await expect(page.getByText(/請手動上傳文章資料庫/)).toBeVisible();
+        await expect(page.getByText('步驟 1：上傳 RAG 資料庫')).toBeVisible();
     });
 
     test('displays article input section', async ({ page }) => {
