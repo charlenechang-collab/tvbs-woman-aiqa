@@ -1,8 +1,8 @@
 .env
 node_modules/
-dist/
-database.csv
 .DS_Store
+dist/
+.next/
 *.log
 npm-debug.log*
 .vscode/
