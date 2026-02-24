@@ -1,6 +1,6 @@
 
 import { GenerateRequest, QAPair } from '../types';
-import SYSTEM_INSTRUCTION_TEMPLATE from '../prompts/v2_base_prompt.txt?raw';
+import SYSTEM_INSTRUCTION_TEMPLATE from '../prompts/v2_base_prompt';
 
 // 🚀 Local Cache Key for Daily Trends
 const CACHE_KEY = 'daily_trends';
@@ -14,38 +14,26 @@ interface DailyTrends {
  * REST API Helper for Gemini
  * 使用 REST API 而非 SDK，以確保最大相容性並避開 SDK 版本問題
  */
-const GEMINI_BASE_URL_STUDIO = "https://generativelanguage.googleapis.com/v1beta/models";
-
-
 async function callGeminiRaw(modelId: string, payload: any): Promise<any> {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key is missing! Please checking .env file.");
-
-  // 清理模型名稱，確保格式正確
-  // 例如 "models/gemini-1.5-flash" -> "gemini-1.5-flash"
-  const cleanModel = modelId.replace('models/', '');
-
-  // 直接構建請求 URL
-  const url = `${GEMINI_BASE_URL_STUDIO}/${cleanModel}:generateContent?key=${apiKey}`;
-
-  const response = await fetch(url, {
+  // Instead of direct API call, we use our secure Next.js API route
+  const response = await fetch('/api/generate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ modelId, payload })
   });
 
   if (!response.ok) {
-    let errorBody = "";
-    try { errorBody = await response.text(); } catch (e) { }
+    let errorData: any = {};
+    try { errorData = await response.json(); } catch (e) { }
 
-    // 如果是 404，拋出特定錯誤，並包含詳細原因
-    if (response.status === 404) {
-      throw new Error(`MODEL_NOT_FOUND: ${cleanModel} (Details: ${errorBody})`);
+    // If it's a 404 proxy from the Vercel edge
+    if (errorData.is404 || response.status === 404) {
+      throw new Error(`MODEL_NOT_FOUND: ${modelId} (Details: ${errorData.error || response.statusText})`);
     }
 
-    throw new Error(`Gemini API Error (${response.status}): ${errorBody}`);
+    throw new Error(`Gemini API Error (${response.status}): ${errorData.error || response.statusText}`);
   }
 
   const data = await response.json();
@@ -158,6 +146,24 @@ ${contextString}
   - ✅ 正確：皮衣保養的正確步驟是什麼？
 - 確保語意完整。
 
+【嚴格輸出格式限制】
+你的回答 (answer) 必須「精確地」包含一個前言、三個小標題與三個段落，不可以多也不可以少。請嚴格套用以下的 Markdown 骨架：
+
+**注意：三個小標題必須嚴格使用 ## (H2) 標籤開頭，絕對禁止使用 ### (H3) 或是單純加粗。**
+
+<前言段落，不含任何標題>
+
+## <第一個小標題，長度不超過15字>
+<第一段內文>
+
+## <第二個小標題，長度不超過15字>
+<第二段內文>
+
+## <第三個小標題，長度不超過15字>
+<第三段內文>
+
+絕對禁止產生第4個標題或只產生2個標題。
+
 **JSON 輸出範例 (請嚴格模仿此結構，只輸出 6 項)**：
 [
   { "question": "Q1...", "answer": "...", "sourceId": "...", "sourceTitle": "..." },
@@ -193,7 +199,7 @@ ${contextString}
     }
   }))) as QAPair[];
 
-  // 🛡️ HARD CONSTRAINT removed per user request (Relying on Prompt Template for token saving)
+  // 🛡️ User requested to rely on Prompt Rules, allowing editors to manually delete extra items.
   return finalOutput;
 };
 
@@ -216,6 +222,24 @@ ${inputArticle}
 ${contextString}
 
 請根據上述資料，撰寫 **1 組** 全新的延伸問答 (Q&A)，請嘗試切入不同的觀點。
+
+【嚴格輸出格式限制】
+你的回答 (answer) 必須「精確地」包含一個前言、三個小標題與三個段落，不可以多也不可以少。請嚴格套用以下的 Markdown 骨架：
+
+**注意：三個小標題必須嚴格使用 ## (H2) 標籤開頭，絕對禁止使用 ### (H3) 或是單純加粗。**
+
+<前言段落，不含任何標題>
+
+## <第一個小標題，長度不超過15字>
+<第一段內文>
+
+## <第二個小標題，長度不超過15字>
+<第二段內文>
+
+## <第三個小標題，長度不超過15字>
+<第三段內文>
+
+絕對禁止產生第4個標題或只產生2個標題。
 `;
 
   return JSON.parse(await generateWithFallback((model) => ({

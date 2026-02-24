@@ -16,7 +16,7 @@ A React-based AI content generation tool designed for **TVBS 《女人我最大�
 ## 🛠 Tech Stack
 
 - **Core**: [React 19](https://react.dev/), [TypeScript](https://www.typescriptlang.org/)
-- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Framework & Build**: [Next.js](https://nextjs.org/) (App Router)
 - **AI Integration**: Google Generative AI (Gemini 3.0 / 2.5 / 1.5)
 - **Styling**: Vanilla CSS (Scoped & Modular)
 - **Testing**: Playwright
@@ -41,24 +41,36 @@ npm install
 ### 3. Environment Configuration
 Create a `.env` file in the root directory:
 ```env
-# Required for AI generation
-API_KEY=your_google_gemini_api_key
+# Required for AI generation (Accessed server-side only)
+GEMINI_API_KEY=your_google_gemini_api_key
 ```
 
 ### 4. Run Locally
 ```bash
 npm run dev
 ```
-The application will start at `http://127.0.0.1:5173`.
+The application will start at `http://localhost:3000`.
+
+### 5. Deployment (Vercel)
+This project is optimized for deployment on Vercel. 
+1. Push code to GitHub.
+2. Import project in Vercel.
+3. Ensure Framework Preset is **Next.js**.
+4. Add `GEMINI_API_KEY` to Vercel Environment Variables.
+5. Deploy.
 
 ## 📂 Project Structure
 
 ```
+├── app/
+│   ├── api/generate/route.ts # Server-side API route for secure Gemini fetching
+│   ├── layout.tsx          # Next.js global layout
+│   └── page.tsx            # Main entry point importing App
 ├── App.tsx                 # Main application controller & state management
 ├── services/
-│   └── geminiService.ts    # AI Model interaction, Fallback logic & Prompt engineering
+│   └── geminiService.ts    # Frontend service wrapping internal API calls
 ├── components/             # Reusable UI components
-├── prompts/                # System prompts and templates
+├── prompts/                # System prompts and templates (TypeScript)
 ├── database.csv            # Source data for RAG (Add your corpus here)
 └── public/                 # Static assets
 ```
