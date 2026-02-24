@@ -6,13 +6,13 @@
 - **Purpose**: Generates extended Q&A pairs for articles using a RAG (Retrieval-Augmented Generation) approach combined with Google's Gemini API.
 
 ## Core Architecture
-- **Frontend**: React 19 + TypeScript + Vite
+- **Frontend**: React 19 + TypeScript + Next.js (App Router)
 - **Styling**: Tailwind CSS (Utility-first) - **STRICT FREEZE ON UI/AI**
 - **State Management**: React Context / Local State
-- **AI Integration**: Direct REST API calls to Google Gemini (Multi-model fallback strategy)
+- **AI Integration**: Backend Next.js API route proxy to Google Gemini (Multi-model fallback strategy) to secure the API Key.
 - **Data Source**: Client-side CSV parsing (PapaParse) for RAG context.
 
 ## Key Constraints
 - **UI/CX**: strict NO-CHANGE policy on current frontend design and CSS.
-- **API**: Must use REST API for Gemini to avoid SDK version conflicts.
-- **Auth**: Hardcoded API Key (Validation purpose) / Env var support.
+- **API**: Must use REST API for Gemini to avoid SDK version conflicts, accessed via internal Next.js API Route.
+- **Auth**: Server-side API Key (`GEMINI_API_KEY`) accessed in Vercel environment.

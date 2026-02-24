@@ -1,3 +1,4 @@
+'use client';
 import React, { useState, useEffect } from 'react';
 import { DatabaseUploader } from './components/DatabaseUploader';
 import { ArticleInput } from './components/ArticleInput';
@@ -5,7 +6,7 @@ import { QAOutput } from './components/QAOutput';
 import { Article, QAPair } from './types';
 import { findRelevantArticles } from './services/rag';
 import { generateExtendedQA, generateSingleQA } from './services/geminiService';
-import { Loader2, Sparkles, BookOpen, AlertCircle } from 'lucide-react';
+import { Loader2, Sparkles, BookOpen, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [dbData, setDbData] = useState<Article[]>([]);
@@ -307,8 +308,8 @@ export default function App() {
                 onClick={() => handleGenerate(false)}
                 disabled={loading || !inputText || !dbData.length}
                 className={`
-                  px-8 py-3 rounded-full font-bold text-white shadow-lg flex items-center gap-2 transition-all transform hover:scale-105 active:scale-95
-                  ${(loading || !inputText || !dbData.length) ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:shadow-pink-200'}
+                  px-8 py-3 rounded-xl font-bold text-white shadow-lg flex items-center gap-2 transition-all duration-300 transform hover:-translate-y-1 active:scale-95
+                  ${(loading || !inputText || !dbData.length) ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-pink-500 to-rose-500 shadow-pink-500/30 hover:shadow-pink-500/50'}
                 `}
               >
                 {loading ? (
@@ -349,27 +350,16 @@ export default function App() {
         {/* Output Section */}
         <div className="max-w-[98%] 2xl:max-w-7xl mx-auto relative">
 
-          {/* Regenerate All Button (Only visible when has results) */}
-          {qaResults.length > 0 && !loading && (
-            <div className="flex justify-end mb-4 px-2">
-              <button
-                onClick={() => {
-                  if (confirm("確定要拋棄當前結果，強制重新生成嗎？")) {
-                    handleGenerate(true);
-                  }
-                }}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-pink-600 transition-colors bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100 hover:border-pink-200"
-              >
-                <Sparkles size={16} />
-                重新生成全部
-              </button>
-            </div>
-          )}
-
           <QAOutput
             data={qaResults}
             onRegenerate={handleRegenerateSingle}
             regeneratingIndex={regeneratingIndex}
+            onRegenerateAll={() => {
+              if (confirm("確定要拋棄當前結果，強制重新生成嗎？")) {
+                handleGenerate(true);
+              }
+            }}
+            isGeneratingAll={loading}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QAPair } from '../types';
-import { Copy, Check, Eye, Edit3, Sparkles, ChevronDown, ChevronUp, RotateCcw, Loader2, Download } from 'lucide-react';
+import { Copy, Check, Eye, Edit3, Sparkles, ChevronDown, ChevronUp, RotateCcw, Loader2, Download, Trash2, AlertCircle, ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, ListChecks, X, GripVertical, RefreshCw } from 'lucide-react';
 
 /**
  * ============================================================================
@@ -28,13 +28,21 @@ interface QAOutputProps {
   data: QAPair[];
   onRegenerate?: (index: number) => void;
   regeneratingIndex?: number | null;
+  onRegenerateAll?: () => void;
+  isGeneratingAll?: boolean;
 }
 
-export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regeneratingIndex }) => {
+export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regeneratingIndex, onRegenerateAll, isGeneratingAll }) => {
   const [editableData, setEditableData] = useState<QAPair[]>([]);
   const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
   const [editModes, setEditModes] = useState<{ [key: number]: boolean }>({});
   const [expandedCards, setExpandedCards] = useState<{ [key: number]: boolean }>({});
+
+  // Modal and Drag states
+  const [showSortModal, setShowSortModal] = useState(false);
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
 
   useEffect(() => {
     // ==================================================================================
@@ -139,11 +147,11 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
       return;
     }
 
-    const exportPayload = editableData.map((item) => ({
+    const dataToExport = editableData.slice(0, 6);
+
+    const exportPayload = dataToExport.map((item) => ({
       question: item.question,
-      answer: convertToHtml(item.answer), // Export HTML format
-      sourceId: item.sourceId,
-      sourceTitle: item.sourceTitle
+      answer: convertToHtml(item.answer) // Export HTML format
     }));
 
     const jsonString = JSON.stringify(exportPayload, null, 2);
@@ -164,6 +172,62 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
 
   const toggleCard = (idx: number) => {
     setExpandedCards(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
+  const handleDeleteItem = (idx: number) => {
+    if (confirm("確定要刪除這組問答嗎？刪除後無法復原。")) {
+      setEditableData(prev => prev.filter((_, i) => i !== idx));
+      setEditModes(prev => {
+        const newModes = { ...prev };
+        delete newModes[idx];
+        return newModes;
+      });
+      setExpandedCards(prev => {
+        const newCards = { ...prev };
+        delete newCards[idx];
+        return newCards;
+      });
+    }
+  };
+
+  const moveItem = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= editableData.length) return;
+
+    setEditableData(prev => {
+      const newData = [...prev];
+      const [movedItem] = newData.splice(fromIndex, 1);
+      newData.splice(toIndex, 0, movedItem);
+      return newData;
+    });
+    // Reset edit modes to force preview after moving
+    setEditModes({});
+  };
+
+  const moveToTop = (idx: number) => moveItem(idx, 0);
+  const moveToBottom = (idx: number) => moveItem(idx, editableData.length - 1);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+    setDragOverItemIndex(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItemIndex !== null && draggedItemIndex !== index) {
+      moveItem(draggedItemIndex, index);
+    }
+    setDraggedItemIndex(null);
+    setDragOverItemIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDragOverItemIndex(null);
   };
 
   const renderFormattedPreview = (text: string) => {
@@ -219,9 +283,9 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
       />
       <button
         onClick={() => handleCopyQ(idx)}
-        className={`mt-2 w-full py-2 px-3 rounded-lg shadow-sm transition-all text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`q-${idx}`]
+        className={`mt-2 w-full py-2 px-3 rounded-xl shadow-sm transition-all duration-300 text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`q-${idx}`]
           ? 'bg-teal-500 text-white transform scale-100'
-          : 'bg-gray-100 text-gray-600 hover:bg-pink-500 hover:text-white hover:shadow-lg'
+          : 'bg-gray-100 text-gray-600 hover:bg-pink-500 hover:text-white hover:shadow-md hover:-translate-y-0.5'
           }`}
       >
         {copiedStates[`q-${idx}`] ? <Check size={16} /> : <Copy size={16} />}
@@ -238,7 +302,7 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
         </label>
         <button
           onClick={() => toggleMode(idx)}
-          className="flex items-center gap-1.5 text-xs font-bold text-pink-600 hover:text-pink-800 transition-all bg-pink-100/50 px-3 py-1 rounded-full border border-pink-200"
+          className="flex items-center gap-1.5 text-xs font-bold text-pink-600 hover:text-pink-800 transition-all bg-pink-50 hover:bg-pink-100 px-3 py-1.5 rounded-xl border border-pink-200"
         >
           {editModes[idx] ? <><Eye size={14} /> 預覽</> : <><Edit3 size={14} /> 編輯</>}
         </button>
@@ -261,9 +325,9 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
 
       <button
         onClick={() => handleCopyA(idx)}
-        className={`mt-3 w-full py-3 px-4 rounded-xl shadow-sm transition-all text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`a-${idx}`]
+        className={`mt-3 w-full py-3 px-4 rounded-xl shadow-sm transition-all duration-300 text-sm font-bold flex items-center justify-center gap-2 ${copiedStates[`a-${idx}`]
           ? 'bg-teal-500 text-white'
-          : 'bg-purple-900 text-white hover:bg-pink-600 hover:shadow-lg'
+          : 'bg-purple-900 text-white hover:bg-pink-600 hover:shadow-md hover:-translate-y-0.5'
           }`}
       >
         {copiedStates[`a-${idx}`] ? <Check size={18} /> : <Copy size={18} />}
@@ -302,7 +366,7 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
       }}
       disabled={regeneratingIndex === idx}
       className={`
-        flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition-all border
+        flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl transition-all border whitespace-nowrap
         ${regeneratingIndex === idx
           ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-transparent'
           : 'bg-white text-gray-500 border-gray-200 hover:bg-pink-50 hover:text-pink-600 hover:border-pink-200 shadow-sm'}
@@ -318,6 +382,47 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
     </button>
   );
 
+  const renderDeleteButton = (idx: number, isMobile = false) => (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleDeleteItem(idx);
+      }}
+      className={`
+        flex items-center justify-center transition-all group
+        ${isMobile
+          ? 'p-2 bg-rose-50/50 rounded-xl hover:bg-rose-500 text-rose-400 hover:text-white shadow-sm border border-rose-100'
+          : 'text-xs font-bold px-3 py-1.5 rounded-xl border bg-white text-rose-500 border-rose-200 hover:bg-rose-500 hover:text-white hover:border-rose-500 shadow-sm gap-1'}
+      `}
+      title="剔除此題"
+    >
+      <Trash2 size={isMobile ? 16 : 14} className={`transition-transform duration-300 ${isMobile ? '' : 'group-hover:scale-110'}`} />
+      {!isMobile && '刪除'}
+    </button>
+  );
+
+  const renderMoveButtons = (idx: number, isMobile = false) => {
+    const isFirst = idx === 0;
+    const isLast = idx === editableData.length - 1;
+
+    return (
+      <div className={`flex items-center gap-1 ${isMobile ? 'bg-white/10 rounded-lg p-0.5' : 'bg-gray-50 border border-gray-200 rounded-lg p-1 text-gray-400 mb-2'}`} onClick={e => e.stopPropagation()}>
+        <button onClick={() => moveToTop(idx)} disabled={isFirst} title="移至最上方" className={`p-1 rounded transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : isMobile ? 'hover:bg-white/20' : 'hover:bg-gray-200 hover:text-pink-600'}`}>
+          <ChevronsUp size={isMobile ? 16 : 14} />
+        </button>
+        <button onClick={() => moveItem(idx, idx - 1)} disabled={isFirst} title="往上一題" className={`p-1 rounded transition-colors ${isFirst ? 'opacity-30 cursor-not-allowed' : isMobile ? 'hover:bg-white/20' : 'hover:bg-gray-200 hover:text-pink-600'}`}>
+          <ArrowUp size={isMobile ? 16 : 14} />
+        </button>
+        <button onClick={() => moveItem(idx, idx + 1)} disabled={isLast} title="往下一題" className={`p-1 rounded transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : isMobile ? 'hover:bg-white/20' : 'hover:bg-gray-200 hover:text-pink-600'}`}>
+          <ArrowDown size={isMobile ? 16 : 14} />
+        </button>
+        <button onClick={() => moveToBottom(idx)} disabled={isLast} title="移入隔離區 (最底)" className={`p-1 rounded transition-colors ${isLast ? 'opacity-30 cursor-not-allowed' : isMobile ? 'hover:bg-white/20' : 'hover:bg-gray-200 hover:text-pink-600'}`}>
+          <ChevronsDown size={isMobile ? 16 : 14} />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className="w-full animate-fade-in pb-20">
       <div className="flex items-center justify-between mb-6 border-b-2 border-pink-200 pb-2">
@@ -325,73 +430,210 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
           ✨ 延伸問答編輯台
         </h2>
 
-        {/* Export JSON Button */}
-        {editableData.length > 0 && (
-          <button
-            onClick={handleExportJSON}
-            className="flex items-center gap-2 bg-purple-900 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-pink-600 hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-          >
-            <Download size={18} />
-            一鍵匯出 JSON
-          </button>
-        )}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-3">
+          {/* Tertiary: Regenerate All (Ghost Style) */}
+          {editableData.length > 0 && onRegenerateAll && (
+            <button
+              onClick={onRegenerateAll}
+              disabled={isGeneratingAll}
+              className="group flex items-center gap-2 text-rose-500 border-2 border-rose-100 hover:bg-rose-50/50 hover:border-rose-200 px-4 py-2 rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <RefreshCw size={16} className={`group-hover:rotate-180 transition-transform duration-500 ${isGeneratingAll ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">重新生成全部</span>
+            </button>
+          )}
+
+          {/* Secondary: Sort Overview (Glassmorphism) */}
+          {editableData.length > 0 && (
+            <button
+              onClick={() => setShowSortModal(true)}
+              className="flex items-center gap-2 bg-pink-100/80 text-pink-700 hover:bg-pink-200 border border-pink-200 px-4 py-2 rounded-xl font-bold backdrop-blur-sm transition-all transform hover:-translate-y-0.5 shadow-sm"
+            >
+              <ListChecks size={18} />
+              <span className="hidden sm:inline">調整排序</span>
+              <span className="sm:hidden">排序</span>
+            </button>
+          )}
+
+          {/* Primary CTA: Export (Gradient + Glowing Shadow) */}
+          {editableData.length > 0 && (
+            <button
+              onClick={handleExportJSON}
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-6 py-2 rounded-xl font-black shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 hover:-translate-y-0.5 transition-all"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">匯出全部 (JSON)</span>
+              <span className="sm:hidden">匯出</span>
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* =======================================================================
+          SORT OVERVIEW MODAL
+      ======================================================================== */}
+      {showSortModal && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col border border-pink-100">
+            <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-5 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <ListChecks size={24} /> 排序總覽與調整
+                </h3>
+                <p className="text-pink-100 text-sm mt-1">拖曳前方把手，或使用右側按鈕快速調整順序。</p>
+              </div>
+              <button
+                onClick={() => setShowSortModal(false)}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 flex-grow bg-gray-50 flex flex-col gap-2 relative">
+              {editableData.map((item, idx) => {
+                const isQuarantine = idx >= 6;
+                const isDragOver = dragOverItemIndex === idx;
+                const isDragged = draggedItemIndex === idx;
+
+                return (
+                  <React.Fragment key={`modal-${idx}`}>
+                    {idx === 6 && (
+                      <div className="my-2 flex items-center gap-3">
+                        <div className="h-px bg-rose-200 flex-grow"></div>
+                        <span className="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full border border-rose-100 flex items-center gap-1.5 shadow-sm">
+                          <AlertCircle size={14} /> 目前只支援6題，以下區域不會被匯出
+                        </span>
+                        <div className="h-px bg-rose-200 flex-grow"></div>
+                      </div>
+                    )}
+                    <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDrop={(e) => handleDrop(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      className={`
+                        flex items-center gap-3 bg-white p-3 rounded-xl border shadow-sm transition-all duration-200 cursor-grab active:cursor-grabbing
+                        ${isQuarantine ? 'border-gray-200 bg-gray-50/80 grayscale-[0.3] opacity-80' : 'border-pink-100 hover:border-pink-300'}
+                        ${isDragOver ? 'border-t-4 border-t-pink-500 scale-[1.02] shadow-md z-10' : ''}
+                        ${isDragged ? 'opacity-20 bg-gray-100 scale-[0.98]' : ''}
+                      `}
+                    >
+                      <div className="text-gray-400 p-1">
+                        <GripVertical size={20} />
+                      </div>
+                      <div className={`w-8 h-8 flex items-center justify-center rounded-lg font-bold flex-shrink-0 ${isQuarantine ? 'bg-gray-200 text-gray-500' : 'bg-pink-100 text-pink-700'}`}>
+                        {idx + 1}
+                      </div>
+                      <div className="flex-grow min-w-0 pr-4">
+                        <div className={`font-bold truncate text-sm md:text-base ${isQuarantine ? 'text-gray-600' : 'text-gray-800'}`}>
+                          {item.question || '未命名問答'}
+                        </div>
+                        <div className="text-xs text-gray-400 truncate mt-0.5">
+                          {item.sourceTitle}
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        {renderMoveButtons(idx, true)}
+                      </div>
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+
+            <div className="p-4 bg-white border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setShowSortModal(false)}
+                className="bg-gray-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-sm"
+              >
+                完成調整
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* =======================================================================
           MOBILE VIEW (< lg) - CARD LAYOUT
           Stack columns vertically for better mobile experience
       ======================================================================== */}
       <div className="flex flex-col gap-6 lg:hidden">
-        {editableData.map((item, idx) => (
-          <div key={idx} className="bg-white rounded-2xl shadow-md border border-pink-100 overflow-hidden">
-            {/* Mobile Card Header */}
-            <div
-              className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4 flex justify-between items-center cursor-pointer"
-              onClick={() => toggleCard(idx)}
-            >
-              <div className="flex items-center gap-3">
-                <span className="bg-white/20 px-2 py-1 rounded text-sm font-bold">#{idx + 1}</span>
-                <span className="font-bold truncate max-w-[200px]">{item.question || '未命名問答'}</span>
-              </div>
+        {editableData.map((item, idx) => {
+          const isQuarantine = idx >= 6;
+          return (
+            <React.Fragment key={idx}>
+              {idx === 6 && (
+                <div className="flex flex-col items-center justify-center py-2 opacity-90 my-2">
+                  <div className="w-full h-px bg-rose-300/50 mb-3"></div>
+                  <span className="bg-rose-50 text-rose-500 text-[11px] px-3 py-1.5 rounded-full font-bold inline-flex items-center gap-1.5 border border-rose-100">
+                    <AlertCircle size={14} /> 目前最多匯入6題，以下不會被匯出
+                  </span>
+                  <div className="w-full h-px bg-rose-300/50 mt-3"></div>
+                </div>
+              )}
+              <div
+                className={`bg-white rounded-2xl shadow-md border overflow-hidden transition-all duration-300
+                  ${isQuarantine ? 'border-gray-200 opacity-60 grayscale-[0.6]' : 'border-pink-100'}
+                `}
+              >
+                {/* Mobile Card Header */}
+                <div
+                  className={`text-white p-4 flex justify-between items-center cursor-pointer
+                    ${isQuarantine ? 'bg-gray-400' : 'bg-gradient-to-r from-pink-500 to-rose-500'}
+                  `}
+                  onClick={() => toggleCard(idx)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="bg-white/20 px-2 py-1 rounded text-sm font-bold">#{idx + 1}</span>
+                    <span className="font-bold truncate max-w-[200px]">{item.question || '未命名問答'}</span>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                {/* Mobile Redo Button */}
-                {onRegenerate && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => onRegenerate(idx)}
-                      disabled={regeneratingIndex === idx}
-                      className="p-1.5 bg-white/20 rounded-full hover:bg-white/30 text-white transition-colors"
-                    >
-                      {regeneratingIndex === idx ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <RotateCcw size={16} />
-                      )}
-                    </button>
+                  <div className="flex items-center gap-3">
+                    {/* Mobile Redo Button */}
+                    {onRegenerate && (
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onRegenerate(idx)}
+                          disabled={regeneratingIndex === idx}
+                          className="p-1.5 bg-white/20 rounded-full hover:bg-white/30 text-white transition-colors"
+                        >
+                          {regeneratingIndex === idx ? (
+                            <Loader2 size={16} className="animate-spin" />
+                          ) : (
+                            <RotateCcw size={16} />
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                      {renderDeleteButton(idx, true)}
+                    </div>
+                    {expandedCards[idx] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                </div>
+
+                {/* Mobile Card Content */}
+                {expandedCards[idx] && (
+                  <div className={`p-4 flex flex-col gap-6 ${isQuarantine ? 'bg-gray-50' : 'bg-pink-50/10'}`}>
+                    <div>
+                      {renderQuestionInput(idx, item)}
+                    </div>
+                    <div>
+                      {renderAnswerInput(idx, item)}
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-pink-400 uppercase tracking-widest block mb-2">來源</label>
+                      {renderSourceDisplay(item)}
+                    </div>
                   </div>
                 )}
-                {expandedCards[idx] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
-            </div>
-
-            {/* Mobile Card Content */}
-            {expandedCards[idx] && (
-              <div className="p-4 flex flex-col gap-6 bg-pink-50/10">
-                <div>
-                  {renderQuestionInput(idx, item)}
-                </div>
-                <div>
-                  {renderAnswerInput(idx, item)}
-                </div>
-                <div>
-                  <label className="text-[10px] font-black text-pink-400 uppercase tracking-widest block mb-2">來源</label>
-                  {renderSourceDisplay(item)}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* =======================================================================
@@ -415,28 +657,52 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
             </tr>
           </thead>
           <tbody className="divide-y divide-pink-50">
-            {editableData.map((item, idx) => (
-              <tr key={idx} className="hover:bg-pink-50/20 transition-colors group">
-                <td className="p-5 text-center align-top pt-8 bg-pink-50/30">
-                  <div className="flex flex-col items-center gap-3">
-                    <span className="text-pink-700 font-bold text-lg">{idx + 1}</span>
-                    {onRegenerate && renderRedoButton(idx)}
-                  </div>
-                </td>
+            {editableData.map((item, idx) => {
+              const isQuarantine = idx >= 6;
 
-                <td className="p-5 align-top">
-                  {renderQuestionInput(idx, item)}
-                </td>
+              return (
+                <React.Fragment key={`desktop-${idx}`}>
+                  {idx === 6 && (
+                    <tr>
+                      <td colSpan={4} className="p-4 pb-0 bg-transparent">
+                        <div className="flex items-center justify-center py-4 relative group/quarantine">
+                          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-300 to-transparent opacity-50 z-0"></div>
+                          <span className="relative z-10 bg-rose-50 border border-rose-200 text-rose-500 text-sm px-5 py-2 rounded-full font-bold shadow-sm flex items-center gap-2 tracking-wide backdrop-blur-sm">
+                            <AlertCircle size={16} className="text-rose-400" /> 目前《女人我最大》的後台最多只能匯入6題，以下這區不會被匯出
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  <tr
+                    className={`
+                      group transition-all duration-300
+                      ${isQuarantine ? 'bg-gray-50/50 hover:bg-gray-100/50 opacity-60 grayscale-[0.6]' : 'hover:bg-pink-50/30'}
+                    `}
+                  >
+                    <td className={`p-4 text-center align-top pt-8 ${isQuarantine ? '' : 'bg-pink-50/20'} border-r border-gray-100/50`}>
+                      <div className="flex flex-col items-center gap-2">
+                        <span className={`font-bold text-lg mb-1 ${isQuarantine ? 'text-gray-500' : 'text-pink-700'}`}>{idx + 1}</span>
+                        {onRegenerate && renderRedoButton(idx)}
+                        {renderDeleteButton(idx)}
+                      </div>
+                    </td>
 
-                <td className="p-5 align-top">
-                  {renderAnswerInput(idx, item)}
-                </td>
+                    <td className="p-4 align-top">
+                      {renderQuestionInput(idx, item)}
+                    </td>
 
-                <td className="p-5 align-top pt-10">
-                  {renderSourceDisplay(item)}
-                </td>
-              </tr>
-            ))}
+                    <td className="p-4 align-top">
+                      {renderAnswerInput(idx, item)}
+                    </td>
+
+                    <td className="p-4 align-top pt-10">
+                      {renderSourceDisplay(item)}
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
