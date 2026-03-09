@@ -16,25 +16,43 @@ function getBigrams(text: string): Set<string> {
 /**
  * Calculate relevance score based on bigram overlap.
  */
+// 排除常見無意義的停用詞/字元
+const STOP_WORDS = new Set(['可以', '這樣', '怎麼', '什麼', '一個', '我們', '因為', '所以', '然後', '不過', '還是', '如果', '就是', '這個', '這些', '那些', '一樣', '知道', '覺得']);
+function isStopGram(gram: string) {
+  return STOP_WORDS.has(gram) || /^[的了是在我有和就不人都一上也很好到說要去你會著看自己這]+$/.test(gram);
+}
+
 function calculateRelevance(inputText: string, article: Article): number {
   if (!inputText || !article.content) return 0;
-  
+
   const inputBigrams = getBigrams(inputText);
-  // Optimization: Don't generate set for article, just check string inclusion for input bigrams?
-  // Actually, searching for every bigram in a long article string is O(N*M).
-  // Creating a set of article bigrams is better for O(1) lookup.
-  
-  // However, for pure simplicity and "good enough" for short demos:
   const articleContent = (article.title + article.content).toLowerCase();
-  
+
   let matchCount = 0;
+  let validBigramsCount = 0;
+
   inputBigrams.forEach(gram => {
-    if (articleContent.includes(gram)) {
-      matchCount++;
+    if (!isStopGram(gram)) {
+      validBigramsCount++;
+      if (articleContent.includes(gram)) {
+        matchCount++;
+      }
     }
   });
 
-  return matchCount;
+  if (validBigramsCount === 0) return 0;
+
+  // 為了避免長文章自帶優勢，計算匹配密度 (Match Ratio) 
+  // 同時給予 article.title 較高的權重
+  const titleBigrams = getBigrams(article.title.toLowerCase());
+  let titleMatch = 0;
+  titleBigrams.forEach(gram => {
+    if (!isStopGram(gram) && inputBigrams.has(gram)) {
+      titleMatch += 2; // 標題命中權重加倍
+    }
+  });
+
+  return matchCount + titleMatch;
 }
 
 export const findRelevantArticles = (
@@ -49,7 +67,7 @@ export const findRelevantArticles = (
 
   // If filtering removed everything, try to fallback to original db if possible, or just return empty
   const dbToUse = validDb.length > 0 ? validDb : database;
-  
+
   // If still empty (e.g. database has items but content is all undefined/empty), return empty
   if (dbToUse.length === 0) return [];
 
