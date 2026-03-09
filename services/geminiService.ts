@@ -15,29 +15,42 @@ interface DailyTrends {
  * 使用 REST API 而非 SDK，以確保最大相容性並避開 SDK 版本問題
  */
 async function callGeminiRaw(modelId: string, payload: any): Promise<any> {
-  // Instead of direct API call, we use our secure Next.js API route
-  const response = await fetch('/api/generate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ modelId, payload })
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-  if (!response.ok) {
-    let errorData: any = {};
-    try { errorData = await response.json(); } catch (e) { }
+  try {
+    // Instead of direct API call, we use our secure Next.js API route
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ modelId, payload }),
+      signal: controller.signal
+    });
 
-    // If it's a 404 proxy from the Vercel edge
-    if (errorData.is404 || response.status === 404) {
-      throw new Error(`MODEL_NOT_FOUND: ${modelId} (Details: ${errorData.error || response.statusText})`);
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      let errorData: any = {};
+      try { errorData = await response.json(); } catch (e) { }
+
+      // If it's a 404 proxy from the Vercel edge
+      if (errorData.is404 || response.status === 404) {
+        throw new Error(`MODEL_NOT_FOUND: ${modelId} (Details: ${errorData.error || response.statusText})`);
+      }
+
+      throw new Error(`Gemini API Error (${response.status}): ${errorData.error || response.statusText}`);
     }
 
-    throw new Error(`Gemini API Error (${response.status}): ${errorData.error || response.statusText}`);
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      throw new Error('TIMEOUT: 請求已超時 (60秒)，請稍後再試。');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  return data;
 }
 
 // (Trend generation removed as per user request to strictly rely on RAG)

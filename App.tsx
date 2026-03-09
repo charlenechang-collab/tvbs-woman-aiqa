@@ -14,7 +14,20 @@ export default function App() {
   const [inputText, setInputText] = useState<string>('');
   const [qaResults, setQaResults] = useState<QAPair[]>([]);
   const [loading, setLoading] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
+
+  // Timer for generation
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      setElapsedTime(0);
+      interval = setInterval(() => {
+        setElapsedTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
   // Cache with LocalStorage Persistence
   const [articleCache, setArticleCache] = useState<Record<string, QAPair[]>>(() => {
     try {
@@ -315,7 +328,7 @@ export default function App() {
                 {loading ? (
                   <>
                     <Loader2 className="animate-spin" size={20} />
-                    此由 AI 奴才肝出，唯一要求：請編輯大大去喝水 💧
+                    AI 生成中，喝口水再回來 💧 ({elapsedTime}s)
                   </>
                 ) : (
                   <>

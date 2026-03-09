@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 
 const GEMINI_BASE_URL_STUDIO = "https://generativelanguage.googleapis.com/v1beta/models";
 
+// Set Vercel execution maximum duration to 60 seconds (Hobby plan limit is usually 10-60s)
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
     try {
         const body = await request.json();
@@ -18,13 +21,20 @@ export async function POST(request: Request) {
         const cleanModel = modelId.replace('models/', '');
         const url = `${GEMINI_BASE_URL_STUDIO}/${cleanModel}:generateContent?key=${apiKey}`;
 
+        // Add timeout to prevent backend from hanging indefinitely (58 seconds, just under 60s maxDuration)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 58000);
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload),
+            signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             let errorBody = "";
