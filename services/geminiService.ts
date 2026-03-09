@@ -68,13 +68,13 @@ const generateWithFallback = async (
   // 這裡列出我們「確定曾經可以用」的模型
   // 順序：優先嘗試省錢的 Flash 系列 -> 失敗才試高級的 Pro 系列
   const MODELS = [
-    'gemini-3.0-flash-preview', // 優先：最新且最便宜
-    'gemini-2.5-flash',         // 次選：上一代便宜版
-    'gemini-1.5-flash',         // 備選：更舊的便宜版
+    'gemini-2.5-flash',         // Google 當前主力推薦 (相容性最高)
+    'gemini-2.0-flash',         // 穩定版 Flash
+    'gemini-1.5-flash',         // 舊版備用 Flash
 
     // 以下為高級備援 (當 Flash 全滅才用)
-    'gemini-3.0-pro-preview',
     'gemini-2.5-pro',
+    'gemini-2.0-pro-exp',
     'gemini-1.5-pro'
   ];
 
