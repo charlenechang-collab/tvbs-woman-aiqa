@@ -3,6 +3,7 @@ import { Article } from '../types';
 
 interface DatabaseUploaderProps {
   onDataLoaded: (data: Article[], fileName: string) => void;
+  compact?: boolean;
 }
 
 declare global {
@@ -11,7 +12,7 @@ declare global {
   }
 }
 
-export const DatabaseUploader: React.FC<DatabaseUploaderProps> = ({ onDataLoaded }) => {
+export const DatabaseUploader: React.FC<DatabaseUploaderProps> = ({ onDataLoaded, compact }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -111,6 +112,32 @@ export const DatabaseUploader: React.FC<DatabaseUploaderProps> = ({ onDataLoaded
       setLoading(false);
     }
   };
+
+  if (compact) {
+    return (
+      <div>
+        <input
+          type="file"
+          accept=".csv"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          className="p-2 rounded-xl bg-gray-50 hover:bg-pink-50 text-gray-400 hover:text-pink-600 border border-gray-200 transition-colors shadow-sm disabled:opacity-50"
+          title="手動更新資料庫 (CSV)"
+        >
+          {loading ? (
+             <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          ) : (
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          )}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full mb-6">

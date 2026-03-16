@@ -278,33 +278,71 @@ export default function App() {
           </div>
 
 
-          {/* Step 1: Upload */}
-          <div className="bg-white rounded-2xl shadow-sm border border-pink-100 p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-gray-700 flex items-center gap-2">
-                <span className="bg-gray-100 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-                資料庫設定
-              </h3>
-              {dbName && (
-                <span className="text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-full font-medium">
-                  已載入: {dbName} ({dbData.length} 筆資料)
-                </span>
-              )}
-            </div>
+          {/* Step 1: Database Status */}
+          {dbName || dbData.length > 0 ? (
+            <div className="relative overflow-hidden bg-white/60 backdrop-blur-xl rounded-2xl shadow-lg border border-pink-100/50 p-6 mb-8 group transition-all duration-300 hover:shadow-xl hover:bg-white/80">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 via-transparent to-purple-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+              
+              <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="bg-gradient-to-br from-teal-400 to-emerald-500 w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg shadow-teal-500/30">
+                    <BookOpen size={24} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+                      RAG 資料庫已啟用
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
+                      </span>
+                    </h3>
+                    <p className="text-sm text-gray-500">系統已自動載入所需的知識庫內容</p>
+                  </div>
+                </div>
 
-            <DatabaseUploader onDataLoaded={(data, name) => {
-              setDbData(data);
-              setDbName(name);
-            }} />
-
-            {/* Auto-load Message or Error */}
-            {!dbName && (
-              <div className="flex items-start gap-2 text-xs text-rose-400 bg-rose-50 p-3 rounded-lg">
-                <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-                <p>若未自動載入，請手動上傳文章資料庫 (CSV)。</p>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/80 backdrop-blur border border-pink-50 px-4 py-2 rounded-xl shadow-sm">
+                    <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mb-0.5">文章數量</p>
+                    <p className="text-xl font-black text-gray-700 font-mono">{dbData.length}<span className="text-sm font-medium text-gray-500 ml-1">筆</span></p>
+                  </div>
+                  <div className="bg-white/80 backdrop-blur border border-pink-50 px-4 py-2 rounded-xl shadow-sm">
+                    <p className="text-[10px] text-gray-400 font-bold tracking-wider uppercase mb-0.5">內容類別</p>
+                    <p className="text-base font-bold text-pink-600 mt-0.5">時尚 ✨</p>
+                  </div>
+                  
+                  {/* 小型上傳按鈕，保留手動更新功能 */}
+                  <div className="ml-1">
+                    <DatabaseUploader 
+                      onDataLoaded={(data, name) => {
+                        setDbData(data);
+                        setDbName(name);
+                      }} 
+                      compact={true} 
+                    />
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-pink-100 p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-gray-700 flex items-center gap-2">
+                  <span className="bg-gray-100 text-gray-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                  資料庫設定
+                </h3>
+              </div>
+
+              <DatabaseUploader onDataLoaded={(data, name) => {
+                setDbData(data);
+                setDbName(name);
+              }} />
+
+              <div className="mt-2 flex items-start gap-2 text-xs text-rose-500 bg-rose-50 p-3 rounded-lg border border-rose-100">
+                <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                <p>資料庫自動載入中... 若未載入請手動上傳文章資料庫 (CSV)。</p>
+              </div>
+            </div>
+          )}
 
           {/* Step 2: Input */}
           <div className="bg-white rounded-2xl shadow-sm border border-pink-100 p-6 mb-8 relative">
