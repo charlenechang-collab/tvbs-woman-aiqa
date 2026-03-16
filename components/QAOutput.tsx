@@ -166,6 +166,29 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
     URL.revokeObjectURL(href);
   };
 
+  const handleCopyAll = async () => {
+    if (editableData.length === 0) {
+      alert("目前沒有可複製的資料");
+      return;
+    }
+
+    const dataToExport = editableData.slice(0, 6);
+
+    const exportPayload = dataToExport.map((item) => ({
+      question: item.question,
+      answer: convertToHtml(item.answer) // Export HTML format
+    }));
+
+    const jsonString = JSON.stringify(exportPayload, null, 2);
+    try {
+      await navigator.clipboard.writeText(jsonString);
+      alert("已複製全部 JSON 至剪貼簿");
+    } catch (err) {
+      console.error('Failed to copy all:', err);
+      alert('複製失敗，您的瀏覽器可能不支援此功能');
+    }
+  };
+
   const toggleMode = (idx: number) => {
     setEditModes(prev => ({ ...prev, [idx]: !prev[idx] }));
   };
@@ -456,6 +479,18 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
             </button>
           )}
 
+          {/* Copy All (JSON) */}
+          {editableData.length > 0 && (
+            <button
+              onClick={handleCopyAll}
+              className="flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-xl font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+            >
+              <Copy size={18} />
+              <span className="hidden sm:inline">複製全部</span>
+              <span className="sm:hidden">複製</span>
+            </button>
+          )}
+
           {/* Primary CTA: Export (Gradient + Glowing Shadow) */}
           {editableData.length > 0 && (
             <button
@@ -463,8 +498,8 @@ export const QAOutput: React.FC<QAOutputProps> = ({ data, onRegenerate, regenera
               className="flex items-center gap-2 bg-gradient-to-r from-purple-900 to-indigo-900 text-white px-6 py-2 rounded-xl font-black shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 hover:-translate-y-0.5 transition-all"
             >
               <Download size={18} />
-              <span className="hidden sm:inline">匯出全部 (JSON)</span>
-              <span className="sm:hidden">匯出</span>
+              <span className="hidden sm:inline">下載全部</span>
+              <span className="sm:hidden">下載</span>
             </button>
           )}
         </div>
